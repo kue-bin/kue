@@ -1,0 +1,25 @@
+.{
+    .name = "kue",
+    .version = "0.1.0",
+    .minimum_zig_version = "0.13.0",
+
+    .dependencies = .{
+        .ravi = .{
+            .url = "https://github.com/dibyendumajumdar/ravi/archive/2fbaeaf07ea254c22a615ebcf243463ff0e8edb9.tar.gz",
+            .hash = "12208d962f14bb5caea7d142f2f7ebe14f28c3ad5d40a0b8afa94340f8310c106f46",
+            .lazy = true,
+        },
+        .lunaro = .{
+            .url = "https://github.com/kue-bin/lunaro/archive/491cb9041e0454da8949b0d69c76cf4b97a19aab.tar.gz",
+            .hash = "1220e4fae4dd1eac4b32fa82a3042ca6b0874435dacd87f813e3a544bf949ee9ccc1",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        // For example...
+        //"LICENSE",
+        //"README.md",
+    },
+}
