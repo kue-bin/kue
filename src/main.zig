@@ -1,24 +1,38 @@
 const std = @import("std");
+const lunaro = @import("lunaro");
+
+const rpmalloc = @cImport({
+    @cInclude("rpmalloc.h");
+});
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    _ = rpmalloc.rpmalloc_initialize(0);
+    defer rpmalloc.rpmalloc_finalize();
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    const L = try lunaro.State.initWithAlloc(allocFn, null);
+    // const L = try lunaro.State.init();
+    defer L.close();
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    L.openlibs();
+    _ = L.loadstring(
+        \\print("Hello World!")
+        \\print(_VERSION)
+        \\return "From Lua!"
+    , "", .text);
 
-    try bw.flush(); // don't forget to flush!
+    _ = L.pcall(0, 1, 0);
 }
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+fn allocFn(ud: ?*anyopaque, ptr: ?*anyopaque, osize: usize, nsize: usize) callconv(.C) ?*anyopaque {
+    _ = ud;
+    _ = osize;
+
+    if (nsize == 0) {
+        rpmalloc.rpfree(ptr);
+        return null;
+    } else if (ptr == null) {
+        return rpmalloc.rpmalloc(nsize);
+    } else {
+        return rpmalloc.rprealloc(ptr, nsize);
+    }
 }

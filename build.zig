@@ -34,29 +34,38 @@ pub fn build(b: *Build) void {
         .optimize = optimize,
     });
 
-    const lunaro = b.dependency("lunaro", .{
-        .lua = .lua53,
-        .strip = true,
-        .target = target,
-        .optimize = optimize,
-    });
-
-    if (!(build_options.plain_lua or build_options.system_lua)) {
-        if (b.lazyDependency("ravi", .{})) |ravi| {
-            exe.addIncludePath(ravi.path("./include"));
-            const libravi = try buildRavi(b, build_options, ravi, target, optimize);
-            exe.linkLibrary(libravi);
-        }
-    } else if (build_options.system_lua) {
-        exe.addLibraryPath(.{ .cwd_relative = build_options.system_lua_libdir });
-        exe.addIncludePath(.{ .cwd_relative = build_options.system_lua_incdir });
-        exe.linkSystemLibrary(build_options.system_lua_lib);
+    {
+        const rpmalloc = b.dependency("rpmalloc", .{});
+        exe.linkLibrary(try buildRpMalloc(b, rpmalloc, target, optimize));
+        exe.addIncludePath(rpmalloc.path("./rpmalloc"));
     }
 
-    if (build_options.plain_lua) {
-        exe.root_module.addImport("lunaro", lunaro.module("lunaro-static"));
-    } else {
-        exe.root_module.addImport("lunaro", lunaro.module("lunaro-system"));
+    {
+        const lunaro = b.dependency("lunaro", .{
+            .lua = .lua53,
+            .strip = true,
+            .target = target,
+            .optimize = optimize,
+        });
+
+        if (!(build_options.plain_lua or build_options.system_lua)) {
+            if (b.lazyDependency("ravi", .{})) |ravi| {
+                exe.linkLibrary(try buildRavi(b, build_options, ravi, target, optimize));
+                exe.addIncludePath(ravi.path("./include"));
+                lunaro.module("lunaro-system").addIncludePath(ravi.path("./include"));
+            }
+        } else if (build_options.system_lua) {
+            exe.addLibraryPath(.{ .cwd_relative = build_options.system_lua_libdir });
+            exe.addIncludePath(.{ .cwd_relative = build_options.system_lua_incdir });
+            exe.linkSystemLibrary(build_options.system_lua_lib);
+            lunaro.module("lunaro-system").addIncludePath(.{ .cwd_relative = build_options.system_lua_incdir });
+        }
+
+        if (build_options.plain_lua) {
+            exe.root_module.addImport("lunaro", lunaro.module("lunaro-static"));
+        } else {
+            exe.root_module.addImport("lunaro", lunaro.module("lunaro-system"));
+        }
     }
 
     b.installArtifact(exe);
@@ -70,8 +79,7 @@ pub fn buildRavi(b: *Build, build_options: BuildOptions, upstream: *Build.Depend
     });
     const os = target.result.os.tag;
     const arch = target.result.cpu.arch;
-    const support_mir =
-        if (build_options.jit)
+    const support_mir = if (build_options.jit)
         (os == .linux and
             arch == .x86_64 or
             arch == .riscv64 or
@@ -138,6 +146,26 @@ pub fn buildMir(b: *Build, upstream: *Build.Dependency, target: ResolvedTarget, 
             "-DMIR_PARALLEL_GEN=1",
             "-fno-sanitize=undefined",
         },
+    });
+
+    return lib;
+}
+
+pub fn buildRpMalloc(b: *Build, upstream: *Build.Dependency, target: ResolvedTarget, optimize: OptimizeMode) !*Step.Compile {
+    const lib = b.addStaticLibrary(.{
+        .name = "rpmalloc",
+        .target = target,
+        .optimize = optimize,
+    });
+
+    lib.linkLibC();
+
+    lib.addIncludePath(upstream.path("./rpmalloc"));
+
+    lib.addCSourceFiles(.{
+        .root = upstream.path("./rpmalloc"),
+        .files = &.{"rpmalloc.c"},
+        .flags = &.{},
     });
 
     return lib;
