@@ -6,7 +6,7 @@ const ResolvedTarget = Build.ResolvedTarget;
 const OptimizeMode = std.builtin.OptimizeMode;
 
 const BuildOptions = struct {
-    jit: bool,
+    nojit: bool,
     plain_lua: bool,
     system_lua: bool,
     system_lua_lib: []const u8,
@@ -19,7 +19,7 @@ pub fn build(b: *Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const build_options = BuildOptions{
-        .jit = b.option(bool, "jit", "Enable JIT compilation") orelse true,
+        .nojit = b.option(bool, "disable-jit", "Disable JIT compilation") orelse false,
         .plain_lua = b.option(bool, "plain-lua", "Use PUC Lua 5.3 (will probably break built-in modules)") orelse false,
         .system_lua = b.option(bool, "system-lua", "Use system's Lua library") orelse false,
         .system_lua_lib = b.option([]const u8, "system-lua-lib", "If 'system-lua' is enabled, this will be used to link the system's library") orelse "lua",
@@ -45,7 +45,6 @@ pub fn build(b: *Build) void {
             .lua = .lua53,
             .strip = true,
             .target = target,
-            .optimize = optimize,
         });
 
         if (!(build_options.plain_lua or build_options.system_lua)) {
@@ -79,7 +78,7 @@ pub fn buildRavi(b: *Build, build_options: BuildOptions, upstream: *Build.Depend
     });
     const os = target.result.os.tag;
     const arch = target.result.cpu.arch;
-    const support_mir = if (build_options.jit)
+    const support_mir = if (!build_options.nojit)
         (os == .linux and
             arch == .x86_64 or
             arch == .riscv64 or
