@@ -41,6 +41,16 @@ pub fn build(b: *Build) void {
     }
 
     {
+        const isocline = b.dependency("isocline-zig", .{});
+        exe.root_module.addImport("isocline", isocline.module("isocline"));
+    }
+
+    {
+        const known_folders = b.dependency("known-folders", .{});
+        exe.root_module.addImport("known-folders", known_folders.module("known-folders"));
+    }
+
+    {
         const lunaro = b.dependency("lunaro", .{
             .lua = .lua53,
             .strip = true,
@@ -68,6 +78,17 @@ pub fn build(b: *Build) void {
     }
 
     b.installArtifact(exe);
+
+    const run_cmd = b.addRunArtifact(exe);
+
+    run_cmd.step.dependOn(b.getInstallStep());
+
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    const run_step = b.step("run", "Run the app");
+    run_step.dependOn(&run_cmd.step);
 }
 
 pub fn buildRavi(b: *Build, build_options: BuildOptions, upstream: *Build.Dependency, target: ResolvedTarget, optimize: OptimizeMode) !*Step.Compile {

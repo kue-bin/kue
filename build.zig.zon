@@ -17,6 +17,14 @@
             .url = "https://github.com/mjansson/rpmalloc/archive/e4393ff85585d91400bcbad2e7266c011075b673.tar.gz",
             .hash = "12204a577bf30faa734406dfb357fb94da75c2cac0af147bf65c7aad76e6ea026cef",
         },
+        .@"isocline-zig" = .{
+            .url = "git+https://github.com/ratakor/isocline-zig#949b42087c64a58307424a1d30765183171b851f",
+            .hash = "1220a6931c89c1a5d891015857e265544cdee0520b7af905103fabeaf35aa7546e18",
+        },
+        .@"known-folders" = .{
+            .url = "git+https://github.com/ziglibs/known-folders.git#1cceeb70e77dec941a4178160ff6c8d05a74de6f",
+            .hash = "12205f5e7505c96573f6fc5144592ec38942fb0a326d692f9cddc0c7dd38f9028f29",
+        },
     },
     .paths = .{
         "build.zig",
