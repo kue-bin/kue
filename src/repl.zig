@@ -29,12 +29,13 @@ pub fn startRepl(L: *lunaro.State) !void {
 }
 
 fn handleError(L: *lunaro.State) !void {
-    const stderr = std.io.getStdErr().writer();
+    var buff: [255]u8 = undefined;
+    const msg = L.tostring(-1) orelse try std.fmt.bufPrintZ(&buff, "<error message is a {s}>", .{L.typenameof(-1)});
 
-    _ = L.getglobal("debug");
-    _ = L.getfield(-1, "traceback");
-    L.pushvalue(-3);
-    L.call(1, 1);
-    _ = try stderr.write(L.tostring(-1).?);
-    _ = try stderr.write("\n");
+    L.traceback(L, msg, 1);
+    const stderr = std.io.getStdErr().writer();
+    _ = .{
+        try stderr.write(L.tostring(-1).?),
+        try stderr.write("\n"),
+    };
 }
