@@ -1,0 +1,3 @@
+pub const version = "@VERSION@";
+
+// vim: set ft=zig

@@ -5,6 +5,7 @@ const rpmalloc = @cImport({
 });
 
 const repl = @import("repl.zig");
+const std_json = @import("std/json.zig");
 
 pub fn main() !u8 {
     _ = rpmalloc.rpmalloc_initialize();
@@ -33,7 +34,12 @@ fn mainChunk(L: *lunaro.State) !void {
     const argv = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, argv);
 
-    try repl.startRepl(L);
+    _ = std_json.open(L);
+    L.setglobal("json");
+
+    if (std.io.getStdIn().isTty()) {
+        try repl.startRepl(L);
+    }
 }
 
 fn report(L: *lunaro.State, status: lunaro.ThreadStatus) !void {

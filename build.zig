@@ -27,6 +27,8 @@ pub fn build(b: *Build) void {
         .system_lua_libdir = b.option([]const u8, "system-lua-libdir", "If 'system-lua' is enabled, this will be used as search path for linking Lua library") orelse ".",
     };
 
+    _ = b.run(&.{ "bash", "generate-config.sh" });
+
     const exe = b.addExecutable(.{
         .name = "kue",
         .root_source_file = b.path("./src/main.zig"),
